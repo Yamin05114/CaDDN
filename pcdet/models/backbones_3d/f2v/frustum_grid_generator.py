@@ -79,6 +79,7 @@ class FrustumGridGenerator(nn.Module):
         Returns:
             frustum_grid [torch.Tensor(B, X, Y, Z, 3)]: Frustum sampling grid
         """
+        # B是相机数目
         B = lidar_to_cam.shape[0]
 
         # Create transformation matricies
@@ -92,17 +93,21 @@ class FrustumGridGenerator(nn.Module):
         voxel_grid = voxel_grid.repeat_interleave(repeats=B, dim=0)
 
         # Transform to camera frame
-        camera_grid = kornia.transform_points(trans_01=trans, points_1=voxel_grid)
+        #camera_grid shape: B X Y Z 3
+        camera_grid = kornia.transform_points(trans_01=trans, points_1=voxel_grid)  
 
         # Project to image
         I_C = I_C.reshape(B, 1, 1, 3, 4)
+        # image_grid shape: B X Y Z 2; image_depth B X Y Z 1
         image_grid, image_depths = transform_utils.project_to_image(project=I_C, points=camera_grid)
 
         # Convert depths to depth bins
+        # Image_depths.shape: B X Y Z 1  落在哪个bin
         image_depths = depth_utils.bin_depths(depth_map=image_depths, **self.disc_cfg)
 
         # Stack to form frustum grid
         image_depths = image_depths.unsqueeze(-1)
+        # frustum_grid = B X Y Z 3
         frustum_grid = torch.cat((image_grid, image_depths), dim=-1)
         return frustum_grid
 
