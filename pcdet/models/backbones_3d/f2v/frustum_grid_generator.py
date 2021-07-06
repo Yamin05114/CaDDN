@@ -11,8 +11,8 @@ class FrustumGridGenerator(nn.Module):
         """
         Initializes Grid Generator for frustum features
         Args:
-            grid_size [np.array(3)]: Voxel grid shape [X, Y, Z]
-            pc_range [list]: Voxelization point cloud range [X_min, Y_min, Z_min, X_max, Y_max, Z_max]
+            grid_size [np.array(3)]: Voxel grid shape [X, Y, Z]  比如 500 500 20
+            pc_range [list]: Voxelization point cloud range [X_min, Y_min, Z_min, X_max, Y_max, Z_max]  50m前后左右 高度-4，1m 
             disc_cfg [int]: Depth discretiziation configuration
         """
         super().__init__()
@@ -30,9 +30,11 @@ class FrustumGridGenerator(nn.Module):
 
         # Create voxel grid
         self.depth, self.width, self.height = self.grid_size.int()
-        self.voxel_grid = kornia.utils.create_meshgrid3d(depth=self.depth,
-                                                         height=self.height,
-                                                         width=self.width,
+        
+        # 3D dense voxel grid
+        self.voxel_grid = kornia.utils.create_meshgrid3d(depth=self.depth,    #x
+                                                         height=self.height,  #z
+                                                         width=self.width,    #y
                                                          normalized_coordinates=False)
 
         self.voxel_grid = self.voxel_grid.permute(0, 1, 3, 2, 4)  # XZY-> XYZ
@@ -44,6 +46,10 @@ class FrustumGridGenerator(nn.Module):
 
     def grid_to_lidar_unproject(self, pc_min, voxel_size):
         """
+        [[x_size, 0, 0, x_min],          [[voxel_gridx],
+         [0, y_size, 0, y_min],           [voxel_gridy],
+         [0,  0, z_size, z_min],    *     [voxel_gridz],
+         [0,  0, 0, 1]]                   [1]]
         Calculate grid to LiDAR unprojection for each plane
         Args:
             pc_min [torch.Tensor(3)]: Minimum of point cloud range [X, Y, Z] (m)
