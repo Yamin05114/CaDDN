@@ -19,7 +19,7 @@ def bin_depths(depth_map, mode, depth_min, depth_max, num_bins, target=False):
     """
     if mode == "UD":
         bin_size = (depth_max - depth_min) / num_bins
-        indices = ((depth_map - depth_min) / bin_size)
+        indices = ((depth_map - depth_min) / bin_size)  # H,W
     elif mode == "LID":
         bin_size = 2 * (depth_max - depth_min) / (num_bins * (1 + num_bins))
         indices = -0.5 + 0.5 * torch.sqrt(1 + 8 * (depth_map - depth_min) / bin_size)
