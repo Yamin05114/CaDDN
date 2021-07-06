@@ -5,6 +5,7 @@ import kornia
 from pcdet.utils import transform_utils, grid_utils, depth_utils
 
 
+# 从dense grid -> lidar坐标系下的坐标 -> cam坐标系下坐标 -> 图像坐标 + depth
 class FrustumGridGenerator(nn.Module):
 
     def __init__(self, grid_size, pc_range, disc_cfg):
@@ -71,7 +72,7 @@ class FrustumGridGenerator(nn.Module):
         """
         Transforms voxel sampling grid into frustum sampling grid
         Args:
-            grid [torch.Tensor(B, X, Y, Z, 3)]: Voxel sampling grid
+            voxel_grid [torch.Tensor(B, X, Y, Z, 3)]: Voxel sampling grid
             grid_to_lidar [torch.Tensor(4, 4)]: Voxel grid to LiDAR unprojection matrix
             lidar_to_cam [torch.Tensor(B, 4, 4)]: LiDAR to camera frame transformation
             cam_to_img [torch.Tensor(B, 3, 4)]: Camera projection matrix
@@ -84,7 +85,7 @@ class FrustumGridGenerator(nn.Module):
         V_G = grid_to_lidar  # Voxel Grid -> LiDAR (4, 4)
         C_V = lidar_to_cam  # LiDAR -> Camera (B, 4, 4)
         I_C = cam_to_img  # Camera -> Image (B, 3, 4)
-        trans = C_V @ V_G
+        trans = C_V @ V_G  # grid转到lidar实际坐标，再转到相机坐标再转到像素。主要是为了grid和像素对应。
 
         # Reshape to match dimensions
         trans = trans.reshape(B, 1, 1, 4, 4)
